@@ -2,7 +2,7 @@
 
 _[English](README.md) | **Русский**_
 
-https://youtu.be/JHpCIqm-8T0
+[![Parkour](https://img.youtube.com/vi/JHpCIqm-8T0/0.jpg)](https://youtu.be/JHpCIqm-8T0)
 
 AMX Mod X плагин для Counter-Strike.
 
