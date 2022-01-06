@@ -7,7 +7,7 @@
 #endif
 
 #define PLUGIN                      "[Next21.ru] Parkour"
-#define VERSION                     "2.7 - Public test"
+#define VERSION                     "2.8"
 #define AUTHOR                      "Chrescoe1, Next21 Team"
 
 
@@ -154,9 +154,9 @@ new
 
 _UpdateViewModel(const iPlayer)
 {
-    pev(iPlayer,pev_viewmodel2,strUserModel,MODEL_V_STRLEN - 1);
+    pev(iPlayer, pev_viewmodel2, strUserModel, charsmax(strUserModel));
     
-    if(!equal(strUserModel, MODEL_V))
+    if (!equal(strUserModel, MODEL_V))
     {
         hasNewView[iPlayer] = true;
         pev(iPlayer, pev_viewmodel2, strViewModel[iPlayer], MODEL_V_STRLEN - 1);
@@ -270,6 +270,7 @@ _DropAllActions(const iPlayer)
         // Drop some staff
     }
 }
+
 
 // Walljump action
 _setWallJump(const iPlayer, const iActiveItem)
@@ -689,7 +690,6 @@ _Update_PK_Stats(const iPlayer)
     else
     if(iActiveItem)
     {
-
         // In reloading
         if(get_pdata_int(iActiveItem, m_fInReload, extra_offset_weapon) == 1)
         {
@@ -1074,7 +1074,8 @@ stock UTIL_PlayWeaponAnim(const iPlayer, const iSequence, const bool: isForce)
     message_end();
 }
 
-stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], const iEntity,  checkType){
+stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], const iEntity,  checkType)
+{
 
     static iTr;
     iTr = create_tr2();
@@ -1088,6 +1089,7 @@ stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], cons
     {
         if(flFraction >= 1.0) 
         {
+            free_tr2(iTr);
             return 0.0;
         }
 
@@ -1095,6 +1097,7 @@ stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], cons
         get_tr2(iTr,TR_vecPlaneNormal, vec3);
 
         free_tr2(iTr);
+
         if(checkType == CHECK_CLIMB)
         {
             if(vec3[2] < CHECKHULL_MINCLIMBNORMAL)
@@ -1113,8 +1116,10 @@ stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], cons
             return 1.0;
         }
     }
-
-    free_tr2(iTr);
+    else
+    {
+        free_tr2(iTr);
+    }
 
     return flFraction;
 }
