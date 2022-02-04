@@ -17,7 +17,7 @@ Including:
 
 When playing animations, the attack is blocked - after the action ends, it becomes available again.
 
-## Квары
+## Cvars
 - ```pkr_vip_sprint "0"``` Only players with a specific flag have access to the sprint ability.
 - ```pkr_vip_climb "0"``` Only players with a specific flag have access to the climb ability.
 - ```pkr_vip_walljump "0"``` Only players with a specific flag have access to the wall jump ability.
