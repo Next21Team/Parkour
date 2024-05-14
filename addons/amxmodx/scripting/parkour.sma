@@ -7,7 +7,7 @@
 #endif
 
 #define PLUGIN                      "[Next21.ru] Parkour"
-#define VERSION                     "2.8"
+#define VERSION                     "2.9"
 #define AUTHOR                      "Chrescoe1, Next21 Team"
 
 
