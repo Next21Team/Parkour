@@ -23,6 +23,8 @@ When playing animations, the attack is blocked - after the action ends, it becom
 - ```pkr_vip_walljump "0"``` Only players with a specific flag have access to the wall jump ability.
 - ```pkr_walljump_count "2"``` The maximum number of wall jumps before landing on the ground.
 - ```pkr_team "0"``` The player's team for which parkour movements are available (“0″ – for all players, “1″ – only for the terrorist team, “2″ – only for the counter-terrorist team).
+- ```pkr_ignore_players "0"``` Prohibit the use of climb and wall jump abilities opposite the player.
+- ```pkr_fall_velocity "-450"``` Minimum player vertical velocity (fall speed) to trigger the fall animation.
 
 The flag for accessing restricted movements is defined by a constant `#define VIP_FLAG`.
 

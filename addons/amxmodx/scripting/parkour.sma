@@ -61,7 +61,7 @@ enum //MODEL_V_SEQUENCES:
     PUNCH_MISS_1,
     PUNCH_MISS_2,
     CLIMB_L,
-    CLIMB_H 
+    CLIMB_H
 }
 
 // My hull check types
@@ -80,6 +80,8 @@ enum
     CVAR_VIP_WALLJUMP,               // only vip walljump
     CVAR_WALLJUMP_COUNT,             // walljumps number
     CVAR_TEAM,                       // available: 0 - for all, 1 - only TE, 2 - only CT
+    CVAR_IGNORE_PLAYERS,             // ignore players for climbing and walljump
+    CVAR_FALL_VELOCITY,              // Z velocity to enable fallhand state
 
     CVAR_END
 }
@@ -99,7 +101,7 @@ enum
 // Constants
 #define SPRINT_TAPTIME              0.15            // Button taptime interval to enable sprint
 
-// player normal maxspeed 260(with scout), limit cl_forwardspeed 450, >> we can add 190... 
+// player normal maxspeed 260(with scout), limit cl_forwardspeed 450, >> we can add 190...
 #define SPRINT_SPEED_START          15.0            // default sprint speedup
 #define SPRINT_SPEED_MAX            45.0           // max bonus sprint speedup by time
 #define SPRINT_SPEED_MAXTIME        3.0             // time is here
@@ -128,20 +130,18 @@ enum
 #define WALLJUMP_MINVEL             80.0            // Walljump min 'fallforce' to use; walljump only if velocity(Z) > WALLJUMP_MINVEL
 #define WALLJUMP_FALLLIM            -300.0          // if you fall with velocity(Z) < -300 - you can't use walljump
 
-#define FALL_VELOCITY               -450.0          // Z Velocity to enable fallhand state 
-
 #define VIP_FLAG                    ADMIN_LEVEL_H   // Vip flag for abilities
 
 #define FALL_LOCKANIM               0.330           //10 frames / 30 fps
 
 // View model control
-new 
+new
     strUserModel[MODEL_V_STRLEN],
     strViewModel[MAXPLAYERS][MODEL_V_STRLEN],
     bool:hasNewView[MAXPLAYERS];
 
 // Lock stats
-new 
+new
     bool:isWalk[MAXPLAYERS],
     bool:isMove[MAXPLAYERS],
     bool:isLock[MAXPLAYERS];
@@ -155,7 +155,7 @@ new
 _UpdateViewModel(const iPlayer)
 {
     pev(iPlayer, pev_viewmodel2, strUserModel, charsmax(strUserModel));
-    
+
     if (!equal(strUserModel, MODEL_V))
     {
         hasNewView[iPlayer] = true;
@@ -178,7 +178,7 @@ _DropViewModel(const iPlayer)
 }
 
 // Player speed control
-new 
+new
     bool:hasNewSpeed[33],
     Float:fBaseSpeed[33],
     Float:fNewSpeed[33];
@@ -278,7 +278,7 @@ _setWallJump(const iPlayer, const iActiveItem)
     if(_inFall[iPlayer])
         _inFall[iPlayer] = false;
 
-    if(_wallJumps[iPlayer] <= 0) 
+    if(_wallJumps[iPlayer] <= 0)
         return;
 
     static Float:vecVelocity[3];
@@ -299,7 +299,9 @@ _setWallJump(const iPlayer, const iActiveItem)
     vecFow[1] = vecOrigin[1] + floatsin(vecAimAngles[1], degrees) * WALLJUMP_CHECK_DIST;
     vecFow[2] = vecOrigin[2];
 
-    if(UTIL_IsFreeHull(vecOrigin, vecFow, iPlayer, CHECK_WALL) == 1.0)
+    new fNoMonsters = iCvars[CVAR_IGNORE_PLAYERS] ? IGNORE_MONSTERS : DONT_IGNORE_MONSTERS;
+
+    if(UTIL_IsFreeHull(vecOrigin, vecFow, iPlayer, CHECK_WALL, fNoMonsters) == 1.0)
     {
         if(_inSprint[iPlayer])
         {
@@ -322,7 +324,6 @@ _setWallJump(const iPlayer, const iActiveItem)
             punchangle[0] = WALLJUMP_PUNCHANGLE;
             set_pev(iPlayer, pev_punchangle, punchangle);
         }
-
 
         _LockWeaponIdleAnimation(iActiveItem);
     }
@@ -385,7 +386,7 @@ _SetClimbAction(const iPlayer, const bool:climbType, const bool:isActionBlock, c
             static Float:punchangle[3];
             pev(iPlayer, pev_punchangle, punchangle);
 
-            if(punchangle[0] < CLIMB_PUNSHANGLE) 
+            if(punchangle[0] < CLIMB_PUNSHANGLE)
             {
                 punchangle[0] = CLIMB_PUNSHANGLE;
                 set_pev(iPlayer, pev_punchangle, punchangle);
@@ -405,7 +406,7 @@ _SetClimbAction(const iPlayer, const bool:climbType, const bool:isActionBlock, c
 _UpdateClimbAction(const iPlayer, const iActiveItem)
 {
     UTIL_PlayWeaponAnim(iPlayer, _climbAnim[iPlayer], false);
-    
+
     _LockWeaponIdleAnimation(iActiveItem);
 }
 
@@ -509,7 +510,7 @@ _SetJumpAction(const iPlayer, const iActiveItem)
 
     set_pev(iPlayer, pev_velocity, vecVelocity);
 
-    
+
     _LockWeaponIdleAnimation(iActiveItem);
 
     _inFall[iPlayer] = true;
@@ -550,7 +551,7 @@ _SetSwimAction(const iPlayer, const iActiveItem)
     }
 
     _UpdateViewModel(iPlayer);
-    
+
     _LockWeaponIdleAnimation(iActiveItem);
     UTIL_PlayWeaponAnim(iPlayer, SWIM, true);
     _inSwim[iPlayer] = true;
@@ -568,7 +569,7 @@ _UpdateSwimAction(const iPlayer, const iActiveItem)
 {
     _UpdateViewModel(iPlayer);
     UTIL_PlayWeaponAnim(iPlayer, SWIM, false);
-    
+
     _LockWeaponIdleAnimation(iActiveItem);
 }
 
@@ -695,7 +696,7 @@ _Update_PK_Stats(const iPlayer)
         {
             isActionBlock = true;
         }
-        else 
+        else
 
         // In prim/sec weapon action
         if(get_pdata_float(iActiveItem, m_flNextPrimaryAttack, extra_offset_weapon) > -1.0)
@@ -726,7 +727,7 @@ _Update_PK_Stats(const iPlayer)
             }
         }
     }
-    else 
+    else
     {
         isActionBlock = true;
     }
@@ -750,7 +751,7 @@ _Update_PK_Stats(const iPlayer)
             _DropJumpAction(iPlayer, iActiveItem);
         }
     }
-    
+
     static bool:oldBtnFow[MAXPLAYERS];
     if(_inJump[iPlayer])
     {
@@ -758,7 +759,7 @@ _Update_PK_Stats(const iPlayer)
         {
             _DropJumpAction(iPlayer, iActiveItem);
         }
-        else 
+        else
         {
             _UpdateJumpAction(iPlayer, iActiveItem);
             _UpdateFallAction(iPlayer, iActiveItem);
@@ -770,7 +771,7 @@ _Update_PK_Stats(const iPlayer)
     {
         if(_inFall[iPlayer])
             _DropFallAction(iPlayer, iActiveItem)
-    
+
         static iWaterlevel;
         iWaterlevel = pev(iPlayer, pev_waterlevel);
         if(iWaterlevel > 2)
@@ -790,27 +791,27 @@ _Update_PK_Stats(const iPlayer)
             _DropSwimAction(iPlayer, iActiveItem);
         }
     }
-    else 
+    else
     if(_inSwim[iPlayer])
     {
         _DropSwimAction(iPlayer, iActiveItem);
     }
     else if(!onGround)
     {
-        if(!isActionBlock && vecfVelocity[2] < FALL_VELOCITY)
+        if(!isActionBlock && vecfVelocity[2] < float(iCvars[CVAR_FALL_VELOCITY]))
         {
             if(!_inFall[iPlayer])
                 _SetFallAction(iPlayer, iActiveItem);
-            else 
+            else
                 _UpdateFallAction(iPlayer, iActiveItem);
         }
-        else 
+        else
         if(_inFall[iPlayer])
         {
             _DropFallAction(iPlayer, iActiveItem);
         }
     }
-    else 
+    else
     if(_inFall[iPlayer])
     {
         _DropFallAction(iPlayer, iActiveItem);
@@ -838,7 +839,7 @@ _Update_PK_Stats(const iPlayer)
     }
     else
     if(oldBtnFow[iPlayer])
-    { 
+    {
         if(!(iButtons & IN_FORWARD))
         {
             oldBtnFow[iPlayer] = false;
@@ -904,14 +905,13 @@ bool: _tryClimbAction(const iPlayer, const Float:checkUp)
     static Float:vecMaxs[3];
     pev(iPlayer, pev_maxs, vecMaxs);
 
-    static Float:vecMins[3];
-    pev(iPlayer, pev_mins, vecMins);
+    vecOrigin[2] += vecMaxs[2] + checkUp;
 
     static Float:vecOrigin2[3];
     vecOrigin2[0] = vecOrigin[0];
     vecOrigin2[1] = vecOrigin[1];
     vecOrigin2[2] = vecOrigin[2];
-    vecOrigin[2] += vecMaxs[2] + checkUp;
+
     if(UTIL_IsFreeHull(vecOrigin2, vecOrigin, iPlayer, CHECK_NONE) < 1.0)
     {
         return false;
@@ -921,25 +921,19 @@ bool: _tryClimbAction(const iPlayer, const Float:checkUp)
     pev(iPlayer, pev_v_angle, vecAimAngles);
 
     static Float:vecFow[3];
-
-
     vecFow[0] = vecOrigin[0] + floatcos(vecAimAngles[1], degrees) * PLAYER_SIZE_SIDE;
     vecFow[1] = vecOrigin[1] + floatsin(vecAimAngles[1], degrees) * PLAYER_SIZE_SIDE;
     vecFow[2] = vecOrigin[2];
 
-    if(UTIL_IsFreeHull(vecOrigin, vecFow, iPlayer, CHECK_NONE) >= 1.0)
+    new fNoMonsters = iCvars[CVAR_IGNORE_PLAYERS] ? IGNORE_MONSTERS : DONT_IGNORE_MONSTERS;
+
+    if(UTIL_IsFreeHull(vecOrigin, vecFow, iPlayer, CHECK_NONE, fNoMonsters) >= 1.0)
     {
         vecOrigin[0] = vecFow[0];
         vecOrigin[1] = vecFow[1];
         vecOrigin[2] = vecFow[2] - 24.0;
 
-        static Float:res;
-        res = UTIL_IsFreeHull(vecFow, vecOrigin, iPlayer, CHECK_CLIMB);
-
-        if(res != 0.0)
-        {
-            return true;
-        }
+        return UTIL_IsFreeHull(vecFow, vecOrigin, iPlayer, CHECK_CLIMB, fNoMonsters) != 0.0;
     }
 
     return false;
@@ -955,6 +949,8 @@ register_cvars()
     pCvars[CVAR_VIP_WALLJUMP] = register_cvar("pkr_vip_walljump", "0");
     pCvars[CVAR_WALLJUMP_COUNT] = register_cvar("pkr_walljump_count", "2");
     pCvars[CVAR_TEAM] = register_cvar("pkr_team", "0");
+    pCvars[CVAR_IGNORE_PLAYERS] = register_cvar("pkr_ignore_players", "0");
+    pCvars[CVAR_FALL_VELOCITY] = register_cvar("pkr_fall_velocity", "-450");
 
     #if AMXX_VERSION_NUM > 183
         for (new i; i < CVAR_END; i++)
@@ -1017,7 +1013,7 @@ public HookFM_CmdStart(const iPlayer, const iHandle, const iSeed)
             isWalk[iPlayer] = true;
         }
     }
-    else 
+    else
     {
         if(isWalk[iPlayer])
         {
@@ -1042,7 +1038,7 @@ public HookHam_Player_PreThink(const iPlayer)
     isAlive = is_user_alive(iPlayer);
     iTeam = get_user_team(iPlayer);
     iAvailableTeam = iCvars[CVAR_TEAM];
-    
+
     if(!isAlive || (iAvailableTeam && iAvailableTeam != iTeam))
     {
         _DropAllActions(iPlayer);
@@ -1074,20 +1070,19 @@ stock UTIL_PlayWeaponAnim(const iPlayer, const iSequence, const bool: isForce)
     message_end();
 }
 
-stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], const iEntity,  checkType)
+stock Float:UTIL_IsFreeHull(const Float:vecStart[3], const Float:vecEnd[3], const iEntity, checkType, fNoMonsters=DONT_IGNORE_MONSTERS)
 {
-
     static iTr;
     iTr = create_tr2();
 
-    engfunc(EngFunc_TraceHull, vecStart, vecEnd, DONT_IGNORE_MONSTERS, (pev(iEntity, pev_flags) & FL_DUCKING? HULL_HEAD:HULL_HUMAN), iEntity, iTr);
+    engfunc(EngFunc_TraceHull, vecStart, vecEnd, fNoMonsters, (pev(iEntity, pev_flags) & FL_DUCKING? HULL_HEAD:HULL_HUMAN), iEntity, iTr);
 
     static Float:flFraction;
     get_tr2(iTr, TR_flFraction, flFraction);
 
     if(checkType != CHECK_NONE)
     {
-        if(flFraction >= 1.0) 
+        if(flFraction >= 1.0)
         {
             free_tr2(iTr);
             return 0.0;
